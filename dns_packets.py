@@ -1,6 +1,5 @@
 import struct
 
-
 TYPE_A = 1
 TYPE_AAAA = None
 TYPE_NS = None
@@ -14,7 +13,24 @@ class Querry():
 
     @classmethod
     def unpack(cls,data):
-        pass
+        final_domen_name = b''
+        dot_flag = False
+        while(data[0:1] != b'\x00'):
+            lenght_byte = data[0:1]
+            length = struct.unpack("!B",lenght_byte)[0]
+            domen_name = struct.unpack("!" + ("c" * length),data[1:1+length])
+            if(dot_flag):
+                final_domen_name += (b'.')
+            final_domen_name +=  (b'').join(domen_name)
+            data = data[1+length:]
+            dot_flag = True
+        data = data[1:]
+        querry_type = struct.unpack("!H",data[0:2])[0]
+        querry_class = struct.unpack("!H",data[2:4])[0]
+        return Querry(final_domen_name,querry_type,querry_class)
+
+    def __str__(self):
+        return str.format("Domen:{0}\nQuerry Type:{1}\nQuerry Class:{2}",self.domen,self.querry_type,self.querry_class)
 
     def pack(self):
         pass
@@ -47,33 +63,15 @@ class Headers():
                              ,self.transaction_id,self.flags,self.questions,self.answer_RRs,self.authority_RRs,self.additional_RRs)
 
 
-
-
-
 class DNSRequest():
     def unpack(self,data):
         headers = Headers.unpack(data[0:12])
         print(headers)
-        print(data[12:])
-        self.read_querry(data[12:])
+        querry = Querry.unpack(data[12:])
+        print(querry)
 
     def pack(self,querres):
         pass
 
-    def read_querry(self,data):
-        final_domen_name = b''
-        dot_flag = False
-        while(data[0:1] != b'\x00'):
-            lenght_byte = data[0:1]
-            length = struct.unpack("!B",lenght_byte)[0]
-            domen_name = struct.unpack("!" + ("c" * length),data[1:1+length])
-            if(dot_flag):
-                final_domen_name += (b'.')
-            final_domen_name +=  (b'').join(domen_name)
-            data = data[1+length:]
-            dot_flag = True
-        data = data[1:]
-        querry_type = struct.unpack("!H",data[0:2])[0]
-        querry_class = struct.unpack("!H",data[2:4])[0]
-        print(str.format("Domen:{0}\nQuerry Type:{1}\nQuerry Class:{2}",final_domen_name,querry_type,querry_class))
+
 
